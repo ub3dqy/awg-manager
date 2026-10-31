@@ -102,7 +102,7 @@ export class CoreClient {
 			response = await fetch(url, {
 				...options,
 				credentials: 'same-origin',
-				signal: this.abortController.signal,
+				signal: options.signal ? AbortSignal.any([this.abortController.signal, options.signal]) : this.abortController.signal,
 				headers: {
 					'Content-Type': 'application/json',
 					...options.headers

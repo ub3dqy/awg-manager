@@ -19,6 +19,7 @@ type UpdateInfoData struct {
 	LatestVersion  string `json:"latestVersion,omitempty" example:"2.5.0"`
 	CheckedAt      string `json:"checkedAt" example:"2024-01-15T10:00:00Z"`
 	Checking       bool   `json:"checking" example:"false"`
+	Warning        string `json:"warning,omitempty" example:"fork_manual_updates"`
 	// NextAutoInstallAt/LastAutoInstallAt are computed by the auto-install
 	// scheduler (internal/updater.Service.NextAutoInstallAt), not stored on
 	// the cached UpdateInfo — they are injected into the response in both
@@ -142,7 +143,7 @@ func (h *UpdateHandler) Check(w http.ResponseWriter, r *http.Request) {
 //	@Security		CookieAuth
 //	@Success		200	{object}	UpdateApplyResponse
 //	@Failure		400	{object}	APIErrorEnvelope
-//	@Failure		409	{object}	APIErrorEnvelope	"UPGRADE_IN_PROGRESS — an update is being installed; RESTORE_IN_PROGRESS — a restore is running"
+//	@Failure		409	{object}	APIErrorEnvelope	"UPGRADE_IN_PROGRESS, RESTORE_IN_PROGRESS or MANUAL_UPDATES_REQUIRED"
 //	@Failure		500	{object}	APIErrorEnvelope
 //	@Router			/system/update/apply [post]
 func (h *UpdateHandler) Apply(w http.ResponseWriter, r *http.Request) {
@@ -174,6 +175,8 @@ func (h *UpdateHandler) Apply(w http.ResponseWriter, r *http.Request) {
 // retry, not a server fault.
 func applyConflict(err error) (message, code string, ok bool) {
 	switch {
+	case errors.Is(err, updater.ErrManualUpdates):
+		return err.Error(), "MANUAL_UPDATES_REQUIRED", true
 	case errors.Is(err, updater.ErrUpgradeInProgress):
 		return "Upgrade already in progress", "UPGRADE_IN_PROGRESS", true
 	case errors.Is(err, updater.ErrRestoreInProgress):
@@ -198,6 +201,7 @@ func applyConflict(err error) (message, code string, ok bool) {
 //	@Param			to		query	string	true	"To version"
 //	@Success		200	{object}	ChangelogResponse
 //	@Failure		400	{object}	APIErrorEnvelope
+//	@Failure		409	{object}	APIErrorEnvelope	"MANUAL_UPDATES_REQUIRED"
 //	@Failure		500	{object}	APIErrorEnvelope
 //	@Router			/system/update/changelog [get]
 func (h *UpdateHandler) Changelog(w http.ResponseWriter, r *http.Request) {
@@ -215,7 +219,7 @@ func (h *UpdateHandler) Changelog(w http.ResponseWriter, r *http.Request) {
 	if from == "" {
 		entries, err := h.updater.GetChangelogMinor(r.Context(), to)
 		if err != nil {
-			response.ErrorWithStatus(w, http.StatusBadGateway, err.Error(), "CHANGELOG_FETCH_FAILED")
+			respondChangelogError(w, err)
 			return
 		}
 		response.Success(w, map[string]interface{}{"entries": entries})
@@ -224,8 +228,16 @@ func (h *UpdateHandler) Changelog(w http.ResponseWriter, r *http.Request) {
 
 	entries, err := h.updater.GetChangelog(r.Context(), from, to)
 	if err != nil {
-		response.ErrorWithStatus(w, http.StatusBadGateway, err.Error(), "CHANGELOG_FETCH_FAILED")
+		respondChangelogError(w, err)
 		return
 	}
 	response.Success(w, map[string]interface{}{"entries": entries})
+}
+
+func respondChangelogError(w http.ResponseWriter, err error) {
+	if errors.Is(err, updater.ErrManualUpdates) {
+		response.ErrorWithStatus(w, http.StatusConflict, err.Error(), "MANUAL_UPDATES_REQUIRED")
+		return
+	}
+	response.ErrorWithStatus(w, http.StatusBadGateway, err.Error(), "CHANGELOG_FETCH_FAILED")
 }

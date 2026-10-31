@@ -1469,6 +1469,16 @@ const api_ServersAllResponse: v.GenericSchema = v.looseObject({
 	success: v.optional(v.nullable(v.boolean())),
 });
 
+const api_ServiceCheckOptionsEnvelope: v.GenericSchema = v.looseObject({
+	data: v.optional(v.nullable(v.lazy(() => servicecheck_Options))),
+	success: v.optional(v.nullable(v.boolean())),
+});
+
+const api_ServiceCheckReportEnvelope: v.GenericSchema = v.looseObject({
+	data: v.optional(v.nullable(v.lazy(() => servicecheck_Report))),
+	success: v.optional(v.nullable(v.boolean())),
+});
+
 const api_SettingsData: v.GenericSchema = v.looseObject({
 	apiKey: v.optional(v.nullable(v.string())),
 	authEnabled: v.optional(v.nullable(v.boolean())),
@@ -2713,6 +2723,7 @@ const api_UpdateInfoData: v.GenericSchema = v.looseObject({
 	lastAutoInstallAt: v.optional(v.nullable(v.string())),
 	latestVersion: v.optional(v.nullable(v.string())),
 	nextAutoInstallAt: v.optional(v.nullable(v.string())),
+	warning: v.optional(v.nullable(v.string())),
 });
 
 const api_UpdateSettingsDTO: v.GenericSchema = v.looseObject({
@@ -3119,6 +3130,105 @@ const procmon_SystemSnapshot: v.GenericSchema = v.looseObject({
 	uptimeSeconds: v.optional(v.nullable(v.number())),
 });
 
+const servicecheck_Check: v.GenericSchema = v.looseObject({
+	code: v.optional(v.nullable(v.string())),
+	status: v.optional(v.nullable(v.string())),
+});
+
+const servicecheck_DNSResult: v.GenericSchema = v.looseObject({
+	addresses: v.optional(v.nullable(v.array(v.string()))),
+	code: v.optional(v.nullable(v.string())),
+	port: v.optional(v.nullable(v.number())),
+	profile: v.optional(v.nullable(v.string())),
+	status: v.optional(v.nullable(v.string())),
+	upstreamCount: v.optional(v.nullable(v.number())),
+});
+
+const servicecheck_Device: v.GenericSchema = v.looseObject({
+	active: v.optional(v.nullable(v.boolean())),
+	ip: v.optional(v.nullable(v.string())),
+	name: v.optional(v.nullable(v.string())),
+	policy: v.optional(v.nullable(v.string())),
+});
+
+const servicecheck_Flow: v.GenericSchema = v.looseObject({
+	bytesIn: v.optional(v.nullable(v.number())),
+	bytesOut: v.optional(v.nullable(v.number())),
+	destination: v.optional(v.nullable(v.string())),
+	interface: v.optional(v.nullable(v.string())),
+	port: v.optional(v.nullable(v.number())),
+	protocol: v.optional(v.nullable(v.string())),
+	routeClass: v.optional(v.nullable(v.string())),
+});
+
+const servicecheck_FlowsResult: v.GenericSchema = v.looseObject({
+	code: v.optional(v.nullable(v.string())),
+	fetchedAt: v.optional(v.nullable(v.string())),
+	rows: v.optional(v.nullable(v.array(v.lazy(() => servicecheck_Flow)))),
+	status: v.optional(v.nullable(v.string())),
+	truncated: v.optional(v.nullable(v.boolean())),
+});
+
+const servicecheck_Interface: v.GenericSchema = v.looseObject({
+	id: v.optional(v.nullable(v.string())),
+	label: v.optional(v.nullable(v.string())),
+	up: v.optional(v.nullable(v.boolean())),
+});
+
+const servicecheck_Options: v.GenericSchema = v.looseObject({
+	devices: v.optional(v.nullable(v.array(v.lazy(() => servicecheck_Device)))),
+	interfaces: v.optional(v.nullable(v.array(v.lazy(() => servicecheck_Interface)))),
+	profiles: v.optional(v.nullable(v.array(v.lazy(() => servicecheck_Profile)))),
+});
+
+const servicecheck_Profile: v.GenericSchema = v.looseObject({
+	label: v.optional(v.nullable(v.string())),
+	name: v.optional(v.nullable(v.string())),
+	upstreamCount: v.optional(v.nullable(v.number())),
+});
+
+const servicecheck_Report: v.GenericSchema = v.looseObject({
+	client: v.optional(v.nullable(v.lazy(() => servicecheck_Device))),
+	dns: v.optional(v.nullable(v.lazy(() => servicecheck_DNSResult))),
+	finishedAt: v.optional(v.nullable(v.string())),
+	flows: v.optional(v.nullable(v.lazy(() => servicecheck_FlowsResult))),
+	policy: v.optional(v.nullable(v.lazy(() => servicecheck_Check))),
+	port: v.optional(v.nullable(v.number())),
+	rules: v.optional(v.nullable(v.lazy(() => servicecheck_RulesResult))),
+	startedAt: v.optional(v.nullable(v.string())),
+	target: v.optional(v.nullable(v.string())),
+	tcp: v.optional(v.nullable(v.lazy(() => servicecheck_TCPResult))),
+	version: v.optional(v.nullable(v.number())),
+	warnings: v.optional(v.nullable(v.array(v.string()))),
+});
+
+const servicecheck_RuleMatch: v.GenericSchema = v.looseObject({
+	enabled: v.optional(v.nullable(v.boolean())),
+	excluded: v.optional(v.nullable(v.boolean())),
+	name: v.optional(v.nullable(v.string())),
+	targets: v.optional(v.nullable(v.array(v.string()))),
+});
+
+const servicecheck_RulesResult: v.GenericSchema = v.looseObject({
+	code: v.optional(v.nullable(v.string())),
+	matches: v.optional(v.nullable(v.array(v.lazy(() => servicecheck_RuleMatch)))),
+	status: v.optional(v.nullable(v.string())),
+	unevaluated: v.optional(v.nullable(v.number())),
+});
+
+const servicecheck_TCPAttempt: v.GenericSchema = v.looseObject({
+	address: v.optional(v.nullable(v.string())),
+	connected: v.optional(v.nullable(v.boolean())),
+	latencyMS: v.optional(v.nullable(v.number())),
+});
+
+const servicecheck_TCPResult: v.GenericSchema = v.looseObject({
+	attempts: v.optional(v.nullable(v.array(v.lazy(() => servicecheck_TCPAttempt)))),
+	code: v.optional(v.nullable(v.string())),
+	interface: v.optional(v.nullable(v.string())),
+	status: v.optional(v.nullable(v.string())),
+});
+
 const services_Item: v.GenericSchema = v.looseObject({
 	enabled: v.optional(v.nullable(v.boolean())),
 	logPath: v.optional(v.nullable(v.string())),
@@ -3353,6 +3463,7 @@ export const RESPONSE_SCHEMAS: Record<string, v.GenericSchema> = {
 	"GET /client-routes": v.lazy(() => api_ClientRoutesListResponse),
 	"GET /connections": v.lazy(() => api_ConnectionsResponseEnvelope),
 	"GET /diagnostics/dns-proxy": v.lazy(() => api_DnsProxyInfoEnvelope),
+	"GET /diagnostics/service/options": v.lazy(() => api_ServiceCheckOptionsEnvelope),
 	"GET /diagnostics/status": v.lazy(() => api_DiagnosticsStatusResponse),
 	"GET /dns-check/client": v.lazy(() => api_DnsCheckStartResponseEnvelope),
 	"GET /dns-check/probe": v.lazy(() => api_APIEnvelope),
@@ -3565,6 +3676,7 @@ export const RESPONSE_SCHEMAS: Record<string, v.GenericSchema> = {
 	"POST /control/toggle-default-route": v.lazy(() => api_APIEnvelope),
 	"POST /control/toggle-enabled": v.lazy(() => api_APIEnvelope),
 	"POST /diagnostics/run": v.lazy(() => api_APIEnvelope),
+	"POST /diagnostics/service/run": v.lazy(() => api_ServiceCheckReportEnvelope),
 	"POST /dns-check/start": v.lazy(() => api_DnsCheckStartResponseEnvelope),
 	"POST /dns-routes/create": v.lazy(() => api_DnsRouteResponse),
 	"POST /dns-routes/create-batch": v.lazy(() => api_APIEnvelope),

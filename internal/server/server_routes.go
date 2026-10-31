@@ -70,6 +70,7 @@ type routeHandlers struct {
 	foreignIfaceHandler  *api.ForeignIfaceHandler
 	connectionsService   *connections.Service
 	connectionsHandler   *api.ConnectionsHandler
+	serviceCheckHandler  *api.ServiceCheckHandler
 	signatureHandler     *api.SignatureHandler
 	terminalHandler      *api.TerminalHandler
 	eventsHandler        *api.EventsHandler
@@ -213,6 +214,7 @@ func (s *Server) buildRouteHandlers() *routeHandlers {
 		h.connectionsService.SetSingboxMarkProvider(s.connectionsMarkProvider)
 	}
 	h.connectionsHandler = api.NewConnectionsHandler(h.connectionsService)
+	h.serviceCheckHandler = s.newServiceCheckHandler(h)
 
 	h.signatureHandler = api.NewSignatureHandler()
 	h.terminalHandler = api.NewTerminalHandler(s.terminalManager, s.loggingService)
@@ -698,6 +700,10 @@ func (s *Server) registerPolicyRoutes(mux *http.ServeMux, h *routeHandlers) {
 
 // registerDiagnosticsRoutes — diagnostics, DNS proxy info, connections viewer, boot status.
 func (s *Server) registerDiagnosticsRoutes(mux *http.ServeMux, h *routeHandlers) {
+	if h.serviceCheckHandler != nil {
+		mux.HandleFunc("/api/diagnostics/service/options", h.guarded(h.serviceCheckHandler.Options))
+		mux.HandleFunc("/api/diagnostics/service/run", h.guarded(h.serviceCheckHandler.Run))
+	}
 	// Diagnostics (protected + boot guarded)
 	mux.HandleFunc("/api/diagnostics/run", h.guarded(h.diagHandler.Run))
 	mux.HandleFunc("/api/diagnostics/status", h.guarded(h.diagHandler.Status))

@@ -55,6 +55,7 @@ import crypto from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { serviceCheckOptions, makeServiceCheckReport } from './mock-service-check.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const UNIFIED_PRESETS_PATH = resolve(__dirname, '../../internal/presets/defaults.json');
@@ -5061,6 +5062,15 @@ const server = http.createServer(async (req, res) => {
 	if (MOCK_DELAY_MS > 0) await new Promise((r) => setTimeout(r, MOCK_DELAY_MS));
 	const url = new URL(req.url, `http://${req.headers.host}`);
 	const path = url.pathname;
+	if (req.method === 'GET' && path === '/diagnostics/service/options') {
+		sendData(res, serviceCheckOptions);
+		return;
+	}
+	if (req.method === 'POST' && path === '/diagnostics/service/run') {
+		const input = await readJsonBody(req);
+		sendData(res, makeServiceCheckReport(input));
+		return;
+	}
 
 	if (req.method === 'GET' && path === '/__mock/capabilities') {
 		sendData(res, buildMockCapabilities());

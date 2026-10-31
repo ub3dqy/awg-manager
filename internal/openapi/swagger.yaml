@@ -4038,6 +4038,20 @@ definitions:
         example: true
         type: boolean
     type: object
+  api.ServiceCheckOptionsEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/servicecheck.Options'
+      success:
+        type: boolean
+    type: object
+  api.ServiceCheckReportEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/servicecheck.Report'
+      success:
+        type: boolean
+    type: object
   api.SetDescriptionRequest:
     properties:
       description:
@@ -7587,6 +7601,9 @@ definitions:
           the cached and force=true branches of Check (task #559-4, MAJOR-2).
         example: "2024-01-16T05:00:00Z"
         type: string
+      warning:
+        example: fork_manual_updates
+        type: string
     type: object
   api.UpdatePeerRequestDTO:
     properties:
@@ -8640,6 +8657,204 @@ definitions:
         type: string
       uptimeSeconds:
         type: integer
+    type: object
+  servicecheck.Check:
+    properties:
+      code:
+        type: string
+      status:
+        description: ok, warning, fail, unknown, skipped
+        type: string
+    type: object
+  servicecheck.DNSResult:
+    properties:
+      addresses:
+        items:
+          type: string
+        type: array
+      code:
+        type: string
+      port:
+        type: integer
+      profile:
+        type: string
+      status:
+        description: ok, warning, fail, unknown, skipped
+        type: string
+      upstreamCount:
+        type: integer
+    type: object
+  servicecheck.Device:
+    properties:
+      active:
+        type: boolean
+      ip:
+        type: string
+      name:
+        type: string
+      policy:
+        type: string
+    type: object
+  servicecheck.Flow:
+    properties:
+      bytesIn:
+        type: integer
+      bytesOut:
+        type: integer
+      destination:
+        type: string
+      interface:
+        type: string
+      port:
+        type: integer
+      protocol:
+        type: string
+      routeClass:
+        type: string
+    type: object
+  servicecheck.FlowsResult:
+    properties:
+      code:
+        type: string
+      fetchedAt:
+        type: string
+      rows:
+        items:
+          $ref: '#/definitions/servicecheck.Flow'
+        type: array
+      status:
+        description: ok, warning, fail, unknown, skipped
+        type: string
+      truncated:
+        type: boolean
+    type: object
+  servicecheck.Interface:
+    properties:
+      id:
+        type: string
+      label:
+        type: string
+      up:
+        type: boolean
+    type: object
+  servicecheck.Options:
+    properties:
+      devices:
+        items:
+          $ref: '#/definitions/servicecheck.Device'
+        type: array
+      interfaces:
+        items:
+          $ref: '#/definitions/servicecheck.Interface'
+        type: array
+      profiles:
+        items:
+          $ref: '#/definitions/servicecheck.Profile'
+        type: array
+    type: object
+  servicecheck.Profile:
+    properties:
+      label:
+        type: string
+      name:
+        type: string
+      upstreamCount:
+        type: integer
+    type: object
+  servicecheck.Report:
+    properties:
+      client:
+        $ref: '#/definitions/servicecheck.Device'
+      dns:
+        $ref: '#/definitions/servicecheck.DNSResult'
+      finishedAt:
+        type: string
+      flows:
+        $ref: '#/definitions/servicecheck.FlowsResult'
+      policy:
+        $ref: '#/definitions/servicecheck.Check'
+      port:
+        type: integer
+      rules:
+        $ref: '#/definitions/servicecheck.RulesResult'
+      startedAt:
+        type: string
+      target:
+        type: string
+      tcp:
+        $ref: '#/definitions/servicecheck.TCPResult'
+      version:
+        type: integer
+      warnings:
+        items:
+          type: string
+        type: array
+    type: object
+  servicecheck.Request:
+    properties:
+      clientIP:
+        type: string
+      dnsProfile:
+        type: string
+      port:
+        type: integer
+      probeInterface:
+        description: |-
+          Optional NDMS interface ID, validated against the current snapshot. An
+          empty value disables TCP probes; it never means the default/WAN path.
+        type: string
+      target:
+        type: string
+    type: object
+  servicecheck.RuleMatch:
+    properties:
+      enabled:
+        type: boolean
+      excluded:
+        type: boolean
+      name:
+        type: string
+      targets:
+        items:
+          type: string
+        type: array
+    type: object
+  servicecheck.RulesResult:
+    properties:
+      code:
+        type: string
+      matches:
+        items:
+          $ref: '#/definitions/servicecheck.RuleMatch'
+        type: array
+      status:
+        description: ok, warning, fail, unknown, skipped
+        type: string
+      unevaluated:
+        type: integer
+    type: object
+  servicecheck.TCPAttempt:
+    properties:
+      address:
+        type: string
+      connected:
+        type: boolean
+      latencyMS:
+        type: integer
+    type: object
+  servicecheck.TCPResult:
+    properties:
+      attempts:
+        items:
+          $ref: '#/definitions/servicecheck.TCPAttempt'
+        type: array
+      code:
+        type: string
+      interface:
+        type: string
+      status:
+        description: ok, warning, fail, unknown, skipped
+        type: string
     type: object
   services.Item:
     properties:
@@ -10399,6 +10614,59 @@ paths:
       security:
       - CookieAuth: []
       summary: Run diagnostics
+      tags:
+      - diagnostics
+  /diagnostics/service/options:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ServiceCheckOptionsEnvelope'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/api.APIErrorEnvelope'
+      security:
+      - CookieAuth: []
+      summary: Service diagnostic choices
+      tags:
+      - diagnostics
+  /diagnostics/service/run:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Device and destination
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/servicecheck.Request'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ServiceCheckReportEnvelope'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.APIErrorEnvelope'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/api.APIErrorEnvelope'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/api.APIErrorEnvelope'
+      security:
+      - CookieAuth: []
+      summary: Diagnose a client and destination without changing settings
       tags:
       - diagnostics
   /diagnostics/status:
@@ -21132,8 +21400,7 @@ paths:
           schema:
             $ref: '#/definitions/api.APIErrorEnvelope'
         "409":
-          description: UPGRADE_IN_PROGRESS — an update is being installed; RESTORE_IN_PROGRESS
-            — a restore is running
+          description: UPGRADE_IN_PROGRESS, RESTORE_IN_PROGRESS or MANUAL_UPDATES_REQUIRED
           schema:
             $ref: '#/definitions/api.APIErrorEnvelope'
         "500":
@@ -21166,6 +21433,10 @@ paths:
             $ref: '#/definitions/api.ChangelogResponse'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/api.APIErrorEnvelope'
+        "409":
+          description: MANUAL_UPDATES_REQUIRED
           schema:
             $ref: '#/definitions/api.APIErrorEnvelope'
         "500":

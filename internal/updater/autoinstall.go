@@ -177,6 +177,9 @@ func (s *Service) runAutoInstallSlot() {
 // awg-manager self-update; only if none is available, fall back to the
 // managed sing-box binary. At most one of the two is attempted per slot.
 func (s *Service) runAutoInstallActions(ctx context.Context) {
+	if s.manualSelfUpdates && s.singboxUpdater == nil {
+		return
+	}
 	// 1. awg-manager self-update.
 	info := s.CheckNow(ctx)
 	if info != nil && info.Available && info.LatestVersion != "" {
