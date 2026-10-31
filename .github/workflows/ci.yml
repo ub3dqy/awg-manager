@@ -11,6 +11,16 @@ permissions:
   contents: read
 
 jobs:
+  fork-preview-package:
+    name: Fork preview package safety
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - name: Verify offline package builder
+        run: python3 -m unittest discover -s tools -p 'test_fork_preview.py' -v
+
   swagger:
     name: Swagger drift
     runs-on: ubuntu-latest

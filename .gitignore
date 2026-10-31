@@ -76,6 +76,7 @@ CHANGELOG.md
 INSTALL.md
 package.json
 test-results/
+tools/__pycache__/
 .superpowers/
 
 # Release infrastructure — contain repo host IP, SSH key paths, and

@@ -2723,6 +2723,7 @@ const api_UpdateInfoData: v.GenericSchema = v.looseObject({
 	lastAutoInstallAt: v.optional(v.nullable(v.string())),
 	latestVersion: v.optional(v.nullable(v.string())),
 	nextAutoInstallAt: v.optional(v.nullable(v.string())),
+	warning: v.optional(v.nullable(v.string())),
 });
 
 const api_UpdateSettingsDTO: v.GenericSchema = v.looseObject({

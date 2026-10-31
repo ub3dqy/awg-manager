@@ -68,9 +68,11 @@ jobs:
           if gh release download latest --dir /tmp/prev-release --pattern VERSION 2>/dev/null \
             && [[ -f /tmp/prev-release/VERSION ]]; then
             PREV="$(tr -d '[:space:]' < /tmp/prev-release/VERSION)"
-            esc="${VERSION//./\\.}"
-            if [[ "$PREV" =~ ^${esc}\+r([0-9]+)$ ]]; then
-              REV=$((BASH_REMATCH[1] + 1))
+            if [[ "$PREV" == "${VERSION}+r"* ]]; then
+              prior_rev="${PREV#"${VERSION}+r"}"
+              if [[ "$prior_rev" =~ ^[0-9]+$ ]]; then
+                REV=$((10#$prior_rev + 1))
+              fi
             fi
           fi
 

@@ -17,15 +17,16 @@ const checkInterval = 24 * time.Hour
 
 // Service manages periodic update checks and caches results.
 type Service struct {
-	version    string
-	appLog     *logging.ScopedLogger
-	settings   *storage.SettingsStore
-	downloader Downloader
-	changelog  *changelogFetcher
-	mu         sync.RWMutex
-	cached     *UpdateInfo
-	stop       chan struct{}
-	done       chan struct{}
+	manualSelfUpdates bool // fixed by constructor options before workers start
+	version           string
+	appLog            *logging.ScopedLogger
+	settings          *storage.SettingsStore
+	downloader        Downloader
+	changelog         *changelogFetcher
+	mu                sync.RWMutex
+	cached            *UpdateInfo
+	stop              chan struct{}
+	done              chan struct{}
 
 	// Guard against concurrent upgrades
 	upgrading bool
@@ -62,7 +63,7 @@ func (s *Service) isRestoring() bool {
 // New creates a new updater service. dataDir is used for the auto-install
 // marker file; singboxUpdater may be nil if sing-box auto-install is not
 // wired (the scheduler then only handles awg-manager self-updates).
-func New(version string, settings *storage.SettingsStore, appLogger logging.AppLogger, dataDir string, singboxUpdater SingboxUpdater) *Service {
+func New(version string, settings *storage.SettingsStore, appLogger logging.AppLogger, dataDir string, singboxUpdater SingboxUpdater, options ...Option) *Service {
 	s := &Service{
 		version:        version,
 		appLog:         logging.NewScopedLogger(appLogger, logging.GroupSystem, logging.SubUpdate),
@@ -72,11 +73,18 @@ func New(version string, settings *storage.SettingsStore, appLogger logging.AppL
 		stop:           make(chan struct{}),
 		done:           make(chan struct{}),
 	}
+	for _, option := range options {
+		option(s)
+	}
 	s.snapshot = func(spare int64) (backup.Snapshot, error) {
 		return backup.TakeUpdateSnapshot(dataDir, version, time.Now(), spare)
 	}
 	s.downloader = newLoggingDownloader(newDefaultDownloader(), s.appLog)
-	s.changelog = newChangelogFetcher(changelogURLForChannel(channelStable), 10*time.Minute, s.downloader)
+	changelogURL := ""
+	if !s.manualSelfUpdates {
+		changelogURL = changelogURLForChannel(channelStable)
+	}
+	s.changelog = newChangelogFetcher(changelogURL, 10*time.Minute, s.downloader)
 	return s
 }
 
@@ -153,6 +161,9 @@ func (s *Service) run() {
 }
 
 func (s *Service) doCheck() {
+	if s.manualSelfUpdates {
+		return
+	}
 	// Check if auto-updates are enabled
 	if s.settings != nil {
 		if st, err := s.settings.Get(); err == nil && !st.Updates.CheckEnabled {
@@ -190,6 +201,9 @@ func (s *Service) doCheck() {
 
 // GetCached returns the last check result without triggering a new check.
 func (s *Service) GetCached() *UpdateInfo {
+	if s.manualSelfUpdates {
+		return s.manualUpdateInfo()
+	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -203,6 +217,9 @@ func (s *Service) GetCached() *UpdateInfo {
 
 // CheckNow triggers an immediate check and returns the result.
 func (s *Service) CheckNow(ctx context.Context) *UpdateInfo {
+	if s.manualSelfUpdates {
+		return s.manualUpdateInfo()
+	}
 	s.mu.Lock()
 	if s.cached == nil {
 		s.cached = &UpdateInfo{CurrentVersion: s.version, Checking: true}
@@ -229,6 +246,9 @@ func (s *Service) CheckNow(ctx context.Context) *UpdateInfo {
 // ApplyUpgrade downloads and installs the update from the entware repo.
 // Returns error if upgrade is already in progress or no download URL cached.
 func (s *Service) ApplyUpgrade(ctx context.Context) error {
+	if s.manualSelfUpdates {
+		return ErrManualUpdates
+	}
 	// Восстановление и opkg с его postinst боролись бы за одни и те же данные.
 	if s.isRestoring() {
 		return ErrRestoreInProgress
@@ -330,6 +350,9 @@ func (s *Service) snapshotBeforeInstall(ipkPath string) {
 // parses it, and returns the slice of entries strictly newer than fromVer
 // and no newer than toVer. Result is sorted newest-first.
 func (s *Service) GetChangelog(ctx context.Context, fromVer, toVer string) ([]Entry, error) {
+	if s.manualSelfUpdates {
+		return nil, ErrManualUpdates
+	}
 	entries, err := s.changelog.Fetch(ctx)
 	if err != nil {
 		return nil, err
@@ -340,6 +363,9 @@ func (s *Service) GetChangelog(ctx context.Context, fromVer, toVer string) ([]En
 // GetChangelogMinor returns all CHANGELOG entries for the same major.minor
 // as version up to and including that release (e.g. 2.11.0–2.11.2 on 2.11.2+r70).
 func (s *Service) GetChangelogMinor(ctx context.Context, version string) ([]Entry, error) {
+	if s.manualSelfUpdates {
+		return nil, ErrManualUpdates
+	}
 	entries, err := s.changelog.Fetch(ctx)
 	if err != nil {
 		return nil, err

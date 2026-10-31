@@ -45,6 +45,11 @@ AWG Manager. Оригинальная лицензия и указание ав�
 и проверить работу на устройстве. Экспериментальная ветка не объявляется готовым
 выпуском только по результату локальных тестов.
 
+Подготовка первого пакета для KN-2311 описана в [FORK_PREVIEW.md](https://github.com/ub3dqy/awg-manager/blob/feat/service-connectivity-diagnostics/FORK_PREVIEW.md).
+Пробная сборка использует ручные обновления самого AWG Manager и не обращается
+за ними на сервер исходного проекта. Это не меняет настройки opkg или механизм
+загрузки отдельных компонентов. Установка и возврат требуют отдельного испытания.
+
 ## English
 
 This public fork is maintained by Dima Mak / ub3dqy and retains the original

@@ -7601,6 +7601,9 @@ definitions:
           the cached and force=true branches of Check (task #559-4, MAJOR-2).
         example: "2024-01-16T05:00:00Z"
         type: string
+      warning:
+        example: fork_manual_updates
+        type: string
     type: object
   api.UpdatePeerRequestDTO:
     properties:
@@ -21397,8 +21400,7 @@ paths:
           schema:
             $ref: '#/definitions/api.APIErrorEnvelope'
         "409":
-          description: UPGRADE_IN_PROGRESS — an update is being installed; RESTORE_IN_PROGRESS
-            — a restore is running
+          description: UPGRADE_IN_PROGRESS, RESTORE_IN_PROGRESS or MANUAL_UPDATES_REQUIRED
           schema:
             $ref: '#/definitions/api.APIErrorEnvelope'
         "500":
@@ -21431,6 +21433,10 @@ paths:
             $ref: '#/definitions/api.ChangelogResponse'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/api.APIErrorEnvelope'
+        "409":
+          description: MANUAL_UPDATES_REQUIRED
           schema:
             $ref: '#/definitions/api.APIErrorEnvelope'
         "500":

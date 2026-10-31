@@ -25,6 +25,7 @@
 	let savingAutoInstall = $state(false);
 	let savingStats = $state(false);
 	let savingSnapshot = $state(false);
+	const manualSelfUpdates = $derived(updateInfo?.warning === 'fork_manual_updates');
 
 	let localIntervalDays = $state(settings.updates.autoInstallIntervalDays || 7);
 	let localTime = $state(settings.updates.autoInstallTime || '05:00');
@@ -56,14 +57,16 @@
 		checking = true;
 		try {
 			updateInfo = await api.checkUpdate(true);
-			if (updateInfo.error) {
+			if (updateInfo.warning === 'fork_manual_updates') {
+				notifications.info(m.settings_update_fork_manual());
+			} else if (updateInfo.error) {
 				notifications.error(m.settings_update_check_failed({ error: downloadErrorToText(updateInfo.error) }));
 			} else if (updateInfo.available) {
 				notifications.success(m.settings_update_version_available({ version: updateInfo.latestVersion ?? '' }));
 			} else {
 				notifications.info(m.settings_update_none_toast());
 			}
-			if (updateInfo.warning) {
+			if (updateInfo.warning && updateInfo.warning !== 'fork_manual_updates') {
 				notifications.info(updateInfo.warning);
 			}
 		} catch (e) {
@@ -74,12 +77,12 @@
 	}
 
 	function confirmUpgrade() {
-		if (checking || !updateInfo?.available) return;
+		if (checking || manualSelfUpdates || !updateInfo?.available) return;
 		showConfirm = true;
 	}
 
 	async function applyUpgrade() {
-		if (checking || !updateInfo?.available) return;
+		if (checking || manualSelfUpdates || !updateInfo?.available) return;
 		showConfirm = false;
 		upgrading = true;
 
@@ -176,7 +179,9 @@
 
 <div class="setting-row update-row">
 	<div class="flex flex-col gap-1 update-info">
-		{#if upgrading}
+		{#if manualSelfUpdates}
+			<span class="setting-description">{m.settings_update_fork_manual()}</span>
+		{:else if upgrading}
 			<span class="setting-description update-status">
 				{m.settings_update_in_progress()}
 			</span>
@@ -193,14 +198,16 @@
 				{m.settings_update_latest()}
 			</span>
 		{/if}
-		{#if updateInfo?.warning}
+		{#if updateInfo?.warning && !manualSelfUpdates}
 			<span class="setting-description update-warning">
 				{updateInfo.warning}
 			</span>
 		{/if}
 	</div>
 	<div class="update-actions">
-		{#if upgrading}
+		{#if manualSelfUpdates}
+			<a href="https://github.com/ub3dqy/awg-manager" target="_blank" rel="noopener noreferrer">{m.settings_update_fork_open()}</a>
+		{:else if upgrading}
 			<div class="update-spinner"></div>
 		{:else}
 			{#if updateInfo?.currentVersion}
@@ -242,7 +249,7 @@
 		<div class="flex flex-col gap-1">
 			<span class="font-medium">{m.settings_update_auto_label()}</span>
 			<span class="setting-description">
-				{m.settings_update_auto_description()}
+				{manualSelfUpdates ? m.settings_update_fork_schedule() : m.settings_update_auto_description()}
 			</span>
 		</div>
 		<Toggle
@@ -339,7 +346,7 @@
 	{/snippet}
 </Modal>
 
-{#if updateInfo?.currentVersion}
+{#if updateInfo?.currentVersion && !manualSelfUpdates}
 	<ChangelogModal
 		open={showChangelog}
 		pendingUpdate={Boolean(updateInfo.available && updateInfo.latestVersion)}
