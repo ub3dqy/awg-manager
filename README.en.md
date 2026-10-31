@@ -1,5 +1,10 @@
 # AWG Manager
 
+> **Public fork: [ub3dqy/awg-manager](https://github.com/ub3dqy/awg-manager).**
+> We develop additional features based on [AWG Manager by hoaxisr](https://github.com/hoaxisr/awg-manager), retaining the MIT license and original attribution.
+> See [FORK.md](FORK.md) for development and release status.
+> This fork has no installation releases yet; the installation commands below belong to the original project.
+
 > [Russian](README.md)
 
 > A web interface for managing AmneziaWG VPN tunnels on Keenetic routers.

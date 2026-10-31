@@ -2,6 +2,11 @@
 
 > [English](README.en.md)
 
+> **Открытый форк [ub3dqy/awg-manager](https://github.com/ub3dqy/awg-manager).**
+> Развиваем собственные функции на основе [AWG Manager от hoaxisr](https://github.com/hoaxisr/awg-manager), сохраняя лицензию MIT и авторство.
+> Порядок разработки и состояние наших версий: [FORK.md](FORK.md).
+> Самостоятельные установочные сборки форка пока не выпущены; команды установки ниже относятся к исходному проекту.
+
 > Веб-интерфейс для управления AmneziaWG VPN-туннелями на роутерах Keenetic.
 В тестовом режиме добавлена поддержка Sing-box (vless tcp, hysteria, trojan, etc)
 
