@@ -1,6 +1,22 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { api, ApiGatewayError } from './client';
 
+describe('service check cancellation', () => {
+	const originalFetch = globalThis.fetch;
+	afterEach(() => { api.abortAll(); api.setConnectionLostHandler(() => {}); globalThis.fetch = originalFetch; });
+	it.each(['individual', 'all'])('honors %s cancellation without a false connection-lost event', async (source) => {
+		const lost = vi.fn(); api.setConnectionLostHandler(lost);
+		globalThis.fetch = vi.fn().mockImplementation((_url: string, init: RequestInit) => new Promise((_resolve, reject) => {
+			init.signal!.addEventListener('abort', () => reject(new DOMException('Cancelled', 'AbortError')), { once:true });
+		}));
+		const controller = new AbortController();
+		const pending = api.getServiceCheckOptions(controller.signal);
+		if (source === 'individual') controller.abort(); else api.abortAll();
+		await expect(pending).rejects.toMatchObject({ name:'AbortError' });
+		expect(lost).not.toHaveBeenCalled();
+	});
+});
+
 describe('ApiClient error shape', () => {
 	const originalFetch = globalThis.fetch;
 

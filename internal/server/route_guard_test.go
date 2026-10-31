@@ -265,7 +265,7 @@ func newGuardServer(t *testing.T) (*Server, *auth.SessionStore) {
 		dnsCheckService:    &dnscheck.Service{},
 		managedServiceImpl: &managed.Service{},
 		presetCatalog:      &presets.Catalog{},
-		ndmsQueries:        &ndmsquery.Queries{DNSProxyStatus: &ndmsquery.DNSProxyStatusStore{}},
+		ndmsQueries:        &ndmsquery.Queries{DNSProxyStatus: &ndmsquery.DNSProxyStatusStore{}, Hotspot: &ndmsquery.HotspotStore{}, Policies: &ndmsquery.PolicyStore{}, Interfaces: &ndmsquery.InterfaceStore{}},
 		foreignIfaces:      stubForeignIfaces{},
 		proxyRt: ProxyRtSurface{
 			Instances: stub, ListenMoves: stub, WdttLinkDecode: stub, WdttLinkImport: stub,

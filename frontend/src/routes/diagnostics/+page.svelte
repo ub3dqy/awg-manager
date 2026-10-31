@@ -15,9 +15,10 @@
 	import AwgConfigAnalyzerTab from './AwgConfigAnalyzerTab.svelte';
 	import AboutDeviceTab from './AboutDeviceTab.svelte';
 	import DnsInfoTab from './DnsInfoTab.svelte';
+	import ServiceCheckTab from './ServiceCheckTab.svelte';
 	import { MonitoringTab } from '$lib/components/pingcheck';
 
-	type ActiveTab = 'logs' | 'monitoring' | 'connections' | 'checks' | 'about' | 'awgConfig' | 'dns' | 'system';
+	type ActiveTab = 'logs' | 'monitoring' | 'connections' | 'checks' | 'about' | 'awgConfig' | 'dns' | 'system' | 'service';
 
 	function initialDiagnosticsTab(): ActiveTab {
 		const tab = $page.url.searchParams.get('tab');
@@ -25,6 +26,7 @@
 		if (tab === 'monitoring') return 'monitoring';
 		if (tab === 'connections') return 'connections';
 		if (tab === 'checks') return 'checks';
+		if (tab === 'service') return 'service';
 		if (tab === 'about') return 'about';
 		if (tab === 'awgConfig') return 'awgConfig';
 		if (tab === 'dns') return 'dns';
@@ -52,6 +54,7 @@
 		monitoring: m.diag_tab_monitoring(),
 		connections: m.diag_tab_connections(),
 		checks: m.diag_tab_checks(),
+		service: m.sc_tab(),
 		about: m.diag_tab_about(),
 		awgConfig: m.diag_tab_awg_config(),
 		dns: m.diag_tab_dns(),
@@ -64,6 +67,7 @@
 			{ id: 'monitoring', label: tabLabels.monitoring },
 			{ id: 'connections', label: tabLabels.connections },
 			{ id: 'checks', label: tabLabels.checks },
+			{ id: 'service', label: tabLabels.service },
 			{ id: 'about', label: tabLabels.about },
 		];
 		if ($usageLevel === 'expert') {
@@ -201,6 +205,8 @@
 		<ConnectionsTab />
 	{:else if activeTab === 'checks'}
 		<ChecksTab {tunnels} />
+	{:else if activeTab === 'service'}
+		<ServiceCheckTab />
 	{:else if activeTab === 'about'}
 		<AboutDeviceTab />
 	{:else if activeTab === 'awgConfig'}
